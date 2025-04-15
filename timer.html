@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f3f4f6;
+            padding: 16px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            width: 100%;
+            max-width: 28rem;
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 1.875rem;
+            font-weight: bold;
+            margin-bottom: 24px;
+            color: #2563eb;
+        }
+        
+        .controls-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 32px;
+        }
+        
+        .control {
+            text-align: center;
+        }
+        
+        .control h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button {
+            border: none;
+            border-radius: 0.25rem;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .decrement {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .decrement:hover:not(:disabled) {
+            background-color: #dc2626;
+        }
+        
+        .increment {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .increment:hover:not(:disabled) {
+            background-color: #059669;
+        }
+        
+        .length-display {
+            margin: 0 16px;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        
+        .timer {
+            background-color: #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        #timer-label {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        #time-left {
+            font-size: 3rem;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+        }
+        
+        .timer-button {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            font-size: 1rem;
+        }
+        
+        .start-stop {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .start-stop:hover {
+            background-color: #2563eb;
+        }
+        
+        .reset {
+            background-color: #6b7280;
+            color: white;
+        }
+        
+        .reset:hover {
+            background-color: #4b5563;
+        }
+        
+        .button-icon {
+            margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>25 + 5 Clock</h1>
+        
+        <div class="controls-container">
+            <!-- Break Length Control -->
+            <div class="control">
+                <h2 id="break-label">Break Length</h2>
+                <div class="control-buttons">
+                    <button id="break-decrement" class="decrement">-</button>
+                    <span id="break-length" class="length-display">5</span>
+                    <button id="break-increment" class="increment">+</button>
+                </div>
+            </div>
+            
+            <!-- Session Length Control -->
+            <div class="control">
+                <h2 id="session-label">Session Length</h2>
+                <div class="control-buttons">
+                    <button id="session-decrement" class="decrement">-</button>
+                    <span id="session-length" class="length-display">25</span>
+                    <button id="session-increment" class="increment">+</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timer -->
+        <div class="timer">
+            <h2 id="timer-label">Session</h2>
+            <div id="time-left">25:00</div>
+        </div>
+        
+        <!-- Timer Controls -->
+        <div class="timer-controls">
+            <button id="start_stop" class="timer-button start-stop">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="button-icon">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                Start
+            </button>
+            <button id="reset" class="timer-button reset">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="button-icon">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                Reset
+            </button>
+        </div>
+    </div>
+    
+    <!-- Audio element for the beep sound -->
+    <audio id="beep" preload="auto" src="https://raw.githubusercontent.com/freeCodeCamp/cdn/master/build/testable-projects-fcc/audio/BeepSound.wav"></audio>
+
+    <script>
+        // Get DOM elements
+        const breakDecrementBtn = document.getElementById('break-decrement');
+        const breakIncrementBtn = document.getElementById('break-increment');
+        const sessionDecrementBtn = document.getElementById('session-decrement');
+        const sessionIncrementBtn = document.getElementById('session-increment');
+        const breakLengthEl = document.getElementById('break-length');
+        const sessionLengthEl = document.getElementById('session-length');
+        const timerLabelEl = document.getElementById('timer-label');
+        const timeLeftEl = document.getElementById('time-left');
+        const startStopBtn = document.getElementById('start_stop');
+        const resetBtn = document.getElementById('reset');
+        const beepSound = document.getElementById('beep');
+        const playIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="button-icon"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+        const pauseIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="button-icon"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+
+        // State variables
+        let breakLength = 5;
+        let sessionLength = 25;
+        let timeLeft = 25 * 60; // in seconds
+        let timerLabel = 'Session';
+        let isRunning = false;
+        let timerInterval = null;
+
+        // Utility function to format time in mm:ss
+        function formatTime(timeInSeconds) {
+            const minutes = Math.floor(timeInSeconds / 60);
+            const seconds = timeInSeconds % 60;
+            return `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
+
+        // Update the display
+        function updateDisplay() {
+            breakLengthEl.textContent = breakLength;
+            sessionLengthEl.textContent = sessionLength;
+            timerLabelEl.textContent = timerLabel;
+            timeLeftEl.textContent = formatTime(timeLeft);
+        }
+
+        // Handle break length changes
+        breakDecrementBtn.addEventListener('click', () => {
+            if (breakLength > 1) {
+                breakLength--;
+                updateDisplay();
+            }
+        });
+
+        breakIncrementBtn.addEventListener('click', () => {
+            if (breakLength < 60) {
+                breakLength++;
+                updateDisplay();
+            }
+        });
+
+        // Handle session length changes
+        sessionDecrementBtn.addEventListener('click', () => {
+            if (sessionLength > 1) {
+                sessionLength--;
+                if (timerLabel === 'Session') {
+                    timeLeft = sessionLength * 60;
+                }
+                updateDisplay();
+            }
+        });
+
+        sessionIncrementBtn.addEventListener('click', () => {
+            if (sessionLength < 60) {
+                sessionLength++;
+                if (timerLabel === 'Session') {
+                    timeLeft = sessionLength * 60;
+                }
+                updateDisplay();
+            }
+        });
+
+        // Toggle timer
+        startStopBtn.addEventListener('click', () => {
+            if (isRunning) {
+                // Pause the timer
+                clearInterval(timerInterval);
+                isRunning = false;
+                startStopBtn.innerHTML = playIcon + ' Start';
+            } else {
+                // Start the timer
+                isRunning = true;
+                startStopBtn.innerHTML = pauseIcon + ' Pause';
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    
+                    if (timeLeft < 0) {
+                        // Play the beep sound
+                        beepSound.play();
+                        
+                        // Switch between session and break
+                        if (timerLabel === 'Session') {
+                            timerLabel = 'Break';
+                            timeLeft = breakLength * 60;
+                        } else {
+                            timerLabel = 'Session';
+                            timeLeft = sessionLength * 60;
+                        }
+                    }
+                    
+                    updateDisplay();
+                }, 1000);
+            }
+        });
+
+        // Reset timer
+        resetBtn.addEventListener('click', () => {
+            // Stop the timer
+            clearInterval(timerInterval);
+            isRunning = false;
+            
+            // Reset all values to default
+            breakLength = 5;
+            sessionLength = 25;
+            timeLeft = 25 * 60;
+            timerLabel = 'Session';
+            
+            // Stop and rewind audio
+            beepSound.pause();
+            beepSound.currentTime = 0;
+            
+            // Update the display
+            updateDisplay();
+            
+            // Reset button text
+            startStopBtn.innerHTML = playIcon + ' Start';
+        });
+
+        // Initialize the display
+        updateDisplay();
+
+        // Disable buttons based on conditions
+        function updateButtonStates() {
+            breakDecrementBtn.disabled = breakLength <= 1;
+            breakIncrementBtn.disabled = breakLength >= 60;
+            sessionDecrementBtn.disabled = sessionLength <= 1;
+            sessionIncrementBtn.disabled = sessionLength >= 60;
+        }
+
+        // Add event listeners to update button states
+        [breakDecrementBtn, breakIncrementBtn, sessionDecrementBtn, sessionIncrementBtn, startStopBtn].forEach(btn => {
+            btn.addEventListener('click', updateButtonStates);
+        });
+
+        // Initial button states
+        updateButtonStates();
+    </script>
+</body>
+</html>
